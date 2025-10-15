@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import "@fontsource/inter/variable.css";
+
+
+body {
+  @apply bg-gray-900 text-white font-inter;
+}
