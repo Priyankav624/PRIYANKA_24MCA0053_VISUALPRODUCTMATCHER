@@ -9,7 +9,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [minScore, setMinScore] = useState(0.5);
 
-  const API_BASE = "http://127.0.0.1:5000"; 
+  const API_BASE = "https://visual-product-matcher-o6rv.onrender.com"; 
 
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
