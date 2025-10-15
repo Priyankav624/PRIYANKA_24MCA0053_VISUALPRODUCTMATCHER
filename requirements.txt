@@ -1,8 +1,0 @@
-flask
-flask-cors
-pillow
-torch
-torchvision
-sentence-transformers
-numpy
-requests
