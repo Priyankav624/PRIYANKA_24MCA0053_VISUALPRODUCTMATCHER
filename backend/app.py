@@ -1,47 +1,29 @@
 from flask import Flask, request, jsonify
-from sentence_transformers import SentenceTransformer, util
-from PIL import Image
 from flask_cors import CORS
-import io, os, json, torch, pickle, requests
+from PIL import Image
+from sentence_transformers import SentenceTransformer, util
+import io, os, json, torch, pickle, requests, threading
 
 app = Flask(__name__)
 CORS(app)
 
-model = SentenceTransformer("clip-ViT-L-14")
-
-
-with open("products.json", "r") as f:
-    products = json.load(f)
-
+# Global variables
+model = None
+products = []
+product_embeddings = None
 CACHE_PATH = "embeddings_cache.pkl"
+MODEL_NAME = "clip-ViT-L-14"
 
-def get_image_embedding(image_path_or_url):
-    try:
-        if image_path_or_url.startswith("http"):
-            image = Image.open(requests.get(image_path_or_url, stream=True).raw).convert("RGB")
-        else:
-            image = Image.open(image_path_or_url).convert("RGB")
-        return model.encode(image, convert_to_tensor=True)
-    except Exception as e:
-        print("Embedding error:", e)
-        return None
-
-if os.path.exists(CACHE_PATH):
-    with open(CACHE_PATH, "rb") as f:
-        product_embeddings = pickle.load(f)
-else:
-    product_embeddings = []
-    for p in products:
-        emb = get_image_embedding(p["image"])
-        if emb is not None:
-            product_embeddings.append(emb)
-    with open(CACHE_PATH, "wb") as f:
-        pickle.dump(product_embeddings, f)
-
-product_embeddings = torch.stack(product_embeddings)
+@app.route("/")
+def home():
+    return jsonify({"message": "Visual Product Matcher API Running"})
 
 @app.route("/api/search", methods=["POST"])
 def search_similar():
+    global model, products, product_embeddings
+    if model is None or product_embeddings is None:
+        return jsonify({"error": "Model is still loading, please wait 1–2 minutes."}), 503
+
     try:
         if "file" in request.files:
             img_bytes = request.files["file"].read()
@@ -65,11 +47,47 @@ def search_similar():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/")
-def home():
-    return jsonify({"message": "Visual Product Matcher API Running"})
+def load_resources():
+    global model, products, product_embeddings
+    try:
+        print("⏳ Loading model and products...")
+        model = SentenceTransformer(MODEL_NAME)
+
+        with open("products.json", "r") as f:
+            products = json.load(f)
+
+        if os.path.exists(CACHE_PATH):
+            with open(CACHE_PATH, "rb") as f:
+                product_embeddings = pickle.load(f)
+        else:
+            product_embeddings = []
+            for p in products:
+                emb = get_image_embedding(p["image"])
+                if emb is not None:
+                    product_embeddings.append(emb)
+            with open(CACHE_PATH, "wb") as f:
+                pickle.dump(product_embeddings, f)
+
+        product_embeddings = torch.stack(product_embeddings)
+        print("✅ Model & embeddings loaded successfully.")
+    except Exception as e:
+        print("❌ Resource loading error:", e)
+
+def get_image_embedding(image_path_or_url):
+    global model
+    try:
+        if image_path_or_url.startswith("http"):
+            image = Image.open(requests.get(image_path_or_url, stream=True).raw).convert("RGB")
+        else:
+            image = Image.open(image_path_or_url).convert("RGB")
+        return model.encode(image, convert_to_tensor=True)
+    except Exception as e:
+        print("Embedding error:", e)
+        return None
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  
+    # Start model loading in background
+    threading.Thread(target=load_resources).start()
+    port = int(os.environ.get("PORT", 5000))
+    print(f"🔥 Starting Flask on port {port} ...")
     app.run(host="0.0.0.0", port=port)
-
