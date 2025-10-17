@@ -80,6 +80,11 @@ npm run dev
 
 ---
 
+## Output
+
+<img width="188" height="472" alt="image" src="https://github.com/user-attachments/assets/0cc2152c-9760-4a55-ae64-5a59316d1b7d" />
+
+---
 ### `GET /`
 
 **Returns:**
