@@ -57,9 +57,6 @@ export default function App() {
 
       <div className="bg-white shadow-lg rounded-xl p-6 w-full max-w-3xl mb-8">
         <div className="flex flex-col md:flex-row items-center gap-4">
-           <h1 className="text-3xl font-bold text-black-600 mb-4">
-              Upload image or Paste link
-            </h1>
           <input
             type="file"
             accept="image/*"
