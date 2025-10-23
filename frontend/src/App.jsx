@@ -2,28 +2,40 @@ import { useState } from "react";
 import axios from "axios";
 
 export default function App() {
-  const [file, setFile] = useState(null);
-  const [imageUrl, setImageUrl] = useState("");
-  const [preview, setPreview] = useState(null);
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [minScore, setMinScore] = useState(0.5);
+  // ----------------------------
+  // State management
+  // ----------------------------
+  const [file, setFile] = useState(null);              // Holds uploaded image file
+  const [imageUrl, setImageUrl] = useState("");        // Holds image URL input
+  const [preview, setPreview] = useState(null);        // Preview image for user
+  const [results, setResults] = useState([]);          // Stores search results
+  const [loading, setLoading] = useState(false);       // Indicates loading state
+  const [minScore, setMinScore] = useState(0.5);       // Minimum similarity filter
 
   const API_BASE = "https://visual-product-matcher-o6rv.onrender.com"; 
 
+  // ----------------------------
+  // File input handler
+  // ----------------------------
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
     setFile(selected);
     setPreview(URL.createObjectURL(selected));
-    setImageUrl("");
+    setImageUrl(""); // Clear URL if file is selected
   };
 
+  // ----------------------------
+  // URL input handler
+  // ----------------------------
   const handleUrlChange = (e) => {
     setImageUrl(e.target.value);
     setPreview(e.target.value);
-    setFile(null);
+    setFile(null); // Clear file if URL is entered
   };
 
+  // ----------------------------
+  // Submit handler for search
+  // ----------------------------
   const handleSearch = async () => {
     if (!file && !imageUrl) return alert("Please upload or enter an image URL.");
     setLoading(true);
@@ -31,11 +43,14 @@ export default function App() {
 
     try {
       let response;
+      // Handle file upload
       if (file) {
         const formData = new FormData();
         formData.append("file", file);
         response = await axios.post(`${API_BASE}/api/search`, formData);
-      } else {
+      } 
+      // Handle URL input
+      else {
         response = await axios.post(`${API_BASE}/api/search`, { url: imageUrl });
       }
       setResults(response.data.results || []);
@@ -47,6 +62,9 @@ export default function App() {
     }
   };
 
+  // ----------------------------
+  // Filtered results
+  // ----------------------------
   const filteredResults = results.filter((r) => r.similarity >= minScore);
 
   return (
@@ -55,12 +73,13 @@ export default function App() {
         Visual Product Matcher
       </h1>
 
+      {/* Upload / URL input section */}
       <div className="bg-white shadow-lg rounded-xl p-6 w-full max-w-3xl mb-8">
         <h1 className="text-2xl font-bold text-black mb-4">
-              Upload image or Paste link
-            </h1>
+          Upload image or Paste link
+        </h1>
+
         <div className="flex flex-col md:flex-row items-center gap-4">
-  
           <input
             type="file"
             accept="image/*"
@@ -77,6 +96,7 @@ export default function App() {
           />
         </div>
 
+        {/* Preview image */}
         {preview && (
           <div className="mt-4 flex justify-center">
             <img
@@ -87,6 +107,7 @@ export default function App() {
           </div>
         )}
 
+        {/* Search button */}
         <div className="flex justify-center mt-4">
           <button
             onClick={handleSearch}
@@ -98,6 +119,7 @@ export default function App() {
         </div>
       </div>
 
+      {/* Display results */}
       {results.length > 0 && (
         <div className="w-full max-w-5xl">
           <div className="flex items-center justify-between mb-3">
@@ -116,6 +138,7 @@ export default function App() {
             </div>
           </div>
 
+          {/* Result grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {filteredResults.map((item) => (
               <div
@@ -128,7 +151,7 @@ export default function App() {
                   className="w-full h-40 object-cover rounded-md"
                 />
                 <div className="mt-2 text-center">
-                  <p className="font-semibold">{item.name}</p>
+                  <p className="font-semibold text-gray-500">{item.name}</p>
                   <p className="text-sm text-gray-500">{item.category}</p>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                     <div
